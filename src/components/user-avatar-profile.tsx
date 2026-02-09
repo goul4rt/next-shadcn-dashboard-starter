@@ -4,7 +4,7 @@ interface UserAvatarProfileProps {
   className?: string;
   showInfo?: boolean;
   user: {
-    image?: string;
+    image?: string | null;
     name?: string;
     email?: string;
   } | null;
