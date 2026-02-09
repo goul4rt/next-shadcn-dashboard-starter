@@ -1,28 +1,58 @@
+'use client';
 import { buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { SignUp as ClerkSignUpForm } from '@clerk/nextjs';
-import { GitHubLogoIcon } from '@radix-ui/react-icons';
-import { IconStar } from '@tabler/icons-react';
-import { Metadata } from 'next';
+import { signUp } from '@/lib/auth-client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { User, Mail, Lock, Loader2 } from 'lucide-react';
 import { InteractiveGridPattern } from './interactive-grid';
 
-export const metadata: Metadata = {
-  title: 'Authentication',
-  description: 'Authentication forms built using the components.'
-};
+export default function SignUpViewPage() {
+  const router = useRouter();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-export default function SignUpViewPage({ stars }: { stars: number }) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { error } = await signUp.email({
+        name,
+        email,
+        password
+      });
+
+      if (error) {
+        toast.error(error.message || 'Failed to sign up');
+      } else {
+        toast.success('Account created successfully');
+        router.push('/dashboard/overview');
+      }
+    } catch (err) {
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className='relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0'>
       <Link
-        href='/examples/authentication'
+        href='/auth/sign-in'
         className={cn(
           buttonVariants({ variant: 'ghost' }),
-          'absolute top-4 right-4 hidden md:top-8 md:right-8'
+          'absolute top-4 right-4 md:top-8 md:right-8'
         )}
       >
-        Sign Up
+        Sign In
       </Link>
       <div className='bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r'>
         <div className='absolute inset-0 bg-zinc-900' />
@@ -60,29 +90,114 @@ export default function SignUpViewPage({ stars }: { stars: number }) {
       </div>
       <div className='flex h-full items-center justify-center p-4 lg:p-8'>
         <div className='flex w-full max-w-md flex-col items-center justify-center space-y-6'>
-          {/* github link  */}
-          <Link
-            className={cn('group inline-flex hover:text-yellow-200')}
-            target='_blank'
-            href={'https://github.com/kiranism/next-shadcn-dashboard-starter'}
-          >
-            <div className='flex items-center'>
-              <GitHubLogoIcon className='size-4' />
-              <span className='ml-1 inline'>Star on GitHub</span>{' '}
+          <div className='w-full space-y-6'>
+            <div className='space-y-2 text-center'>
+              <h1 className='text-2xl font-semibold tracking-tight'>
+                Create an account
+              </h1>
+              <p className='text-muted-foreground text-sm'>
+                Enter your details to get started
+              </p>
             </div>
-            <div className='ml-2 flex items-center gap-1 text-sm md:flex'>
-              <IconStar
-                className='size-4 text-gray-500 transition-all duration-300 group-hover:text-yellow-300'
-                fill='currentColor'
-              />
-              <span className='font-display font-medium'>{stars}</span>
+
+            <form
+              onSubmit={handleSubmit}
+              className='border-border/60 bg-card/50 rounded-xl border p-6 shadow-sm backdrop-blur-sm transition-shadow focus-within:shadow-md sm:p-8'
+            >
+              <div className='space-y-5'>
+                <div className='space-y-2'>
+                  <Label
+                    htmlFor='name'
+                    className='text-foreground text-sm font-medium'
+                  >
+                    Full Name
+                  </Label>
+                  <div className='relative'>
+                    <User className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
+                    <Input
+                      id='name'
+                      type='text'
+                      placeholder='John Doe'
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className='border-border/80 bg-background/80 placeholder:text-muted-foreground/70 focus-visible:bg-background h-11 rounded-lg pl-10 transition-colors'
+                    />
+                  </div>
+                </div>
+                <div className='space-y-2'>
+                  <Label
+                    htmlFor='email'
+                    className='text-foreground text-sm font-medium'
+                  >
+                    Email
+                  </Label>
+                  <div className='relative'>
+                    <Mail className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
+                    <Input
+                      id='email'
+                      type='email'
+                      placeholder='name@example.com'
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className='border-border/80 bg-background/80 placeholder:text-muted-foreground/70 focus-visible:bg-background h-11 rounded-lg pl-10 transition-colors'
+                    />
+                  </div>
+                </div>
+                <div className='space-y-2'>
+                  <Label
+                    htmlFor='password'
+                    className='text-foreground text-sm font-medium'
+                  >
+                    Password
+                  </Label>
+                  <div className='relative'>
+                    <Lock className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
+                    <Input
+                      id='password'
+                      type='password'
+                      placeholder='••••••••'
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      minLength={8}
+                      className='border-border/80 bg-background/80 placeholder:text-muted-foreground/70 focus-visible:bg-background h-11 rounded-lg pl-10 transition-colors'
+                    />
+                  </div>
+                </div>
+                <Button
+                  type='submit'
+                  className='mt-2 h-11 w-full rounded-lg font-medium shadow-sm transition-all hover:shadow-md disabled:opacity-70'
+                  size='lg'
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className='h-4 w-4 animate-spin' />
+                      Creating account...
+                    </>
+                  ) : (
+                    'Sign Up'
+                  )}
+                </Button>
+              </div>
+            </form>
+
+            <div className='text-center text-sm'>
+              Already have an account?{' '}
+              <Link
+                href='/auth/sign-in'
+                className='hover:text-primary underline underline-offset-4'
+              >
+                Sign in
+              </Link>
             </div>
-          </Link>
-          <ClerkSignUpForm
-            initialValues={{
-              emailAddress: 'your_mail+clerk_test@example.com'
-            }}
-          />
+          </div>
+
           <p className='text-muted-foreground px-8 text-center text-sm'>
             By clicking continue, you agree to our{' '}
             <Link

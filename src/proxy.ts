@@ -1,11 +1,22 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)']);
+export default async function middleware(request: NextRequest) {
+  // Check if the request is for a protected route (/dashboard/*)
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    const session = await auth.api.getSession({
+      headers: request.headers
+    });
 
-export default clerkMiddleware(async (auth, req: NextRequest) => {
-  if (isProtectedRoute(req)) await auth.protect();
-});
+    // If no session, redirect to sign-in
+    if (!session) {
+      return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+    }
+  }
+
+  return NextResponse.next();
+}
+
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
